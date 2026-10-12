@@ -1,0 +1,38 @@
+# dsh-valley-meter-sidebar — Cordis composition patch.
+#
+# Adds one host entry. The client half is delivered by the package's
+# `./client` export (declared in package.json under `dsh.client`), so no second
+# row is needed here.
+#
+# Every value below is optional; these are the defaults, shown so they can be
+# discovered and overridden from the profile patch without reading the sources.
+# NOTE: `windows` are UTC hours, not local hours — the default 01:00-04:00 and
+# 06:00-10:00 UTC are Beijing 09:00-12:00 and 14:00-18:00. Statutory holidays and
+# 调休 makeup workdays come from the `holidayUrl` calendars (holiday-cn) and are
+# billed off-peak all day; `holidays`/`workdays` override or extend that data.
+#
+# - insert:
+#     - id: valley-meter-sidebar
+#       name: dsh-valley-meter-sidebar
+#       config:
+#         endpoint: https://api.deepseek.com
+#         envName: DEEPSEEK_API_KEY
+#         pollSec: 20
+#         refreshSec: 300
+#         currency: CNY
+#         weekendOffPeak: true
+#         windows:
+#           - start: 1
+#             end: 4
+#           - start: 6
+#             end: 10
+#         holidayUrl: https://cdn.jsdelivr.net/gh/NateScarlet/holiday-cn@master/{year}.json
+#         holidayCacheHours: 12
+#         holidays: []
+#         workdays: []
+#         peakColor: '#e08a3c'
+#         valleyColor: '#4d7fd6'
+#         topUpUrl: https://platform.deepseek.com/top_up
+- insert:
+    - id: valley-meter-sidebar
+      name: dsh-valley-meter-sidebar

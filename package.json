@@ -1,0 +1,78 @@
+{
+  "name": "dsh-valley-meter-sidebar",
+  "version": "0.1.0",
+  "description": "DeepSeek peak/valley timeline plus account balance, pinned in the DSH left sidebar above the workspace region. Port of dsh-valley-meter for DSH >= 0.2.0-rc.2.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/host.test.mjs && TZ=Asia/Shanghai node test/client.test.mjs"
+  },
+  "dsh": {
+    "engines": {
+      "dsh": ">=0.2.0-rc.2"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "sidebar",
+    "peak",
+    "valley",
+    "off-peak",
+    "balance",
+    "billing",
+    "holiday"
+  ],
+  "author": "xx9work <372592461@qq.com>",
+  "contributors": [
+    {
+      "name": "istone",
+      "email": "ad571@qq.com",
+      "url": "https://github.com/uckkk/dsh-valley-meter"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xx9work/dsh-valley-meter-sidebar.git"
+  },
+  "homepage": "https://github.com/xx9work/dsh-valley-meter-sidebar",
+  "bugs": {
+    "url": "https://github.com/xx9work/dsh-valley-meter-sidebar/issues"
+  },
+  "license": "MIT"
+}
