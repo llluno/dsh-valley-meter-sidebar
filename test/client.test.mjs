@@ -102,6 +102,35 @@ const ctx = {
     return () => {}
   }
 }
+// ------------------------------------------------------- fake DOM stylesheet
+// The bundle must own its <style> explicitly (the module loader claims and then
+// deletes untagged style tags), so the harness has to observe document.head.
+const styleTags = []
+globalThis.document = {
+  head: {
+    appendChild(tag) {
+      styleTags.push(tag)
+      return tag
+    }
+  },
+  createElement(tagName) {
+    if (tagName !== 'style') throw new Error(`unexpected createElement: ${tagName}`)
+    return {
+      dataset: {},
+      textContent: '',
+      remove() {
+        const index = styleTags.indexOf(this)
+        if (index >= 0) styleTags.splice(index, 1)
+      }
+    }
+  },
+  querySelector(selector) {
+    const match = /^style\[data-plugin-css="(.*)"\]$/.exec(selector)
+    if (match === null) throw new Error(`unexpected selector: ${selector}`)
+    return styleTags.find((tag) => tag.dataset.pluginCss === match[1]) ?? null
+  }
+}
+
 plugin.apply(ctx)
 
 // ------------------------------------------------------------- tree inspection
@@ -217,8 +246,8 @@ check('phase colour comes from the light cartoon theme while in peak', () => {
   if (wide.props.style['--vmx-phase-soft'] !== 'rgba(255, 179, 92, 0.17)') throw new Error(`soft tint was ${wide.props.style['--vmx-phase-soft']}`)
   if (wide.props.style['--vmx-ink'] !== 'rgb(97, 68, 35)') throw new Error(`ink was ${wide.props.style['--vmx-ink']}`)
 })
-check('the rounded strip background and the anchor-aware row rules ship in the stylesheet', () => {
-  const css = wide.children.find((child) => child?.type === 'style').children[0]
+check('the rounded strip background and the anchor-aware row rules ship in the owned stylesheet', () => {
+  const css = styleTags[0].textContent
   if (!/\.vmx-root\{[^}]*border-radius:14px/.test(css)) throw new Error('root has no rounded box')
   if (!/\.vmx-root\{[^}]*background:var\(--vmx-phase-soft\)/.test(css)) throw new Error('root has no tinted background')
   // The slot arrives through a display:contents anchor div, so these must be
@@ -257,10 +286,24 @@ check('the tooltip carries phase, countdown and balance', () => {
     if (!title.includes(fragment)) throw new Error(`title ${JSON.stringify(title)} lacks ${fragment}`)
   }
 })
-check('styles are injected inside the component tree', () => {
-  const style = wide.children.find((child) => child?.type === 'style')
-  if (style === undefined) throw new Error('no <style> child')
-  if (!style.children[0].includes('.vmx-track')) throw new Error('style element has no track rule')
+check('the stylesheet is owned in document.head under our own bundle id', () => {
+  if (styleTags.length !== 1) throw new Error(`saw ${styleTags.length} style tags`)
+  const tag = styleTags[0]
+  if (tag.dataset.plugin !== 'dsh-valley-meter-sidebar') throw new Error(`data-plugin was ${tag.dataset.plugin}`)
+  if (tag.dataset.pluginCss !== 'dsh-valley-meter-sidebar/styles.css') throw new Error(`data-plugin-css was ${tag.dataset.pluginCss}`)
+  if (!tag.textContent.includes('.vmx-track')) throw new Error('owned tag has no track rule')
+})
+check('no anonymous <style> is left inside the component tree', () => {
+  walk(wide, (node) => {
+    if (node.type === 'style') throw new Error('anonymous <style> found in the tree')
+  })
+})
+check('the stylesheet heals itself after a host-side sweep', () => {
+  // Mirrors `removeOwnedStyles` in dsh-client-modules: the tag vanishes from head.
+  styleTags.splice(0)
+  render(registry[0].Component, { size: 16 }, { 0: snapshot(), 1: STAMP })
+  if (styleTags.length !== 1) throw new Error(`after the sweep there are ${styleTags.length} tags`)
+  if (styleTags[0].dataset.plugin !== 'dsh-valley-meter-sidebar') throw new Error('healed tag is untagged')
 })
 
 console.log('strip: off-peak and failure states')
@@ -395,6 +438,15 @@ check('each swatch previews its peak and valley colours', () => {
   const swatches = findAll(page, 'vmx-swatch')
   if (JSON.stringify(halvesOf(swatches[0])) !== JSON.stringify(['#ffb35c', '#7ecbff'])) throw new Error(`candy swatch was ${JSON.stringify(halvesOf(swatches[0]))}`)
   if (JSON.stringify(halvesOf(swatches.at(-1))) !== JSON.stringify(['#e08a3c', '#4d7fd6'])) throw new Error(`custom swatch was ${JSON.stringify(halvesOf(swatches.at(-1)))}`)
+})
+
+check('disposing the plugin removes the stylesheet it owns', () => {
+  // The single ctx.effect cleanup is the last disposer registered by apply.
+  const cleanup = disposers.at(-1)
+  if (typeof cleanup !== 'function') throw new Error('no effect cleanup registered')
+  if (styleTags.length !== 1) throw new Error(`precondition: ${styleTags.length} style tags`)
+  cleanup()
+  if (styleTags.length !== 0) throw new Error(`style tag survived disposal (${styleTags.length} left)`)
 })
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} check(s) failed`)

@@ -83,7 +83,8 @@ dsh plugin --profile web add link:/Volumes/GM7/dsh/valleyplugin
 
 - **主机侧** `lib/index.js`：`inject: ['webServer']`，`ctx.effect` 注册 `GET /api/valley-meter/state`；请求必须来自回环地址且 `Host` 头也是回环（不信任 `X-Forwarded-For`），否则 403。余额有 TTL 缓存、并发去重，失败时保留上一次成功数值并回报 `error`。峰谷判定用「北京时间（UTC+8，无夏令时，直接对 epoch 做位移后读 UTC 字段，因此与主机时区无关）」+ 节假日日历，`nextSwitch` 按分钟向前扫描、每天只解析一次日期类型，因此节假日整段会被正确跳过（21 天上限）。
 - **节假日** `lib/holidays.js`：`createCalendar({urls, fetchJson, storagePath, refreshMs, extraHolidays, extraWorkdays})`，逐个镜像尝试、每年一份内存缓存 + 磁盘缓存、失败只记录 `error` 不抛出；`fetchJson` 可注入，所以测试完全离线。
-- **客户端** `lib/client.js`：单文件、只 `require('react')`，`inject: ['slots','locale']`，注册 `sidebar.panellist`（`order: 100`，最后一行 = 紧邻工作区上方）与同 id 的 `main` 面板；文案走 `ctx.locale.register('valley-meter', ...)`；样式通过组件内的 `<style>` 注入，只用 `--dsw-*` 主题令牌。
+- **客户端** `lib/client.js`：单文件、只 `require('react')`，`inject: ['slots','locale']`，注册 `sidebar.panellist`（`order: 100`，最后一行 = 紧邻工作区上方）与同 id 的 `main` 面板；文案走 `ctx.locale.register('valley-meter', ...)`；只使用 `--dsw-*` 主题令牌。
+- **样式必须「有主」**：样式表由 `ensureStyles()` 注入 `document.head`，并打上 `data-plugin="dsh-valley-meter-sidebar"` + `data-plugin-css="dsh-valley-meter-sidebar/styles.css"`。客户端的模块加载器（`dsh-client-modules`）会在**每个**插件 bundle 实例化时执行 `claimStyles()`，把所有**没有** `data-plugin` 的 `<style>` 认领成自己的，随后在它被替换 / 失效 / 淘汰时用 `removeOwnedStyles()` 删掉——组件树里的匿名 `<style>` 就是这样「被顺走再删掉」的：文字还在、样式全没了。现在标签自带归属，不会被人认领；每次渲染还会重新确认一次（一次 `querySelector`，标签在时零开销），即使被宿主扫掉也能自愈；插件卸载时由 `dropStyles()` 移除。
 - 槽位里的组件不是 `panelRow` 的直接子节点：渲染器会在中间插一层 `<div data-slot="sidebar.panellist" style="display:contents">`（`dsh-client-ui-renderer` 的 `ANCHOR_STYLE`），所以我们落进的是 `button.panelRow > span.panelGlyph(aria-hidden) > div[data-slot] > span.vmx-root`。组件因此用**后代** `:has()` 兜住这一层：
   - `button:has(.vmx-root) > span:has(.vmx-root){flex:1 1 auto;min-width:0;container-type:inline-size}` —— 把装着我们那一格撑满整行；`button:has(.vmx-root) > span:first-of-type{...}` 作为 `flex-basis:auto` 在同一行时的兜底。
   - `button:has(.vmx-root) > span:not(:has(.vmx-root)){display:none}` —— 隐藏右侧的 `.panelTitle` 文字（也就是「峰谷电表」那四个字）。
@@ -94,12 +95,12 @@ dsh plugin --profile web add link:/Volumes/GM7/dsh/valleyplugin
 
 ```bash
 node test/host.test.mjs                       # 36 项：峰谷窗口、下次切换、周末规则、节假日日历、回环白名单
-TZ=Asia/Shanghai node test/client.test.mjs    # 34 项：槽位注册、组件树、本地时间几何、日期类型、配色主题、三种状态
+TZ=Asia/Shanghai node test/client.test.mjs    # 37 项：槽位注册、组件树、本地时间几何、日期类型、配色主题、样式归属、三种状态
 ```
 
 主机测试用注入的假 `fetchJson` 与假日历，覆盖：节假日整段跳过、节后第一个工作日恢复高峰、调休周六报 `workdayName` 但仍全天低谷、`nextSwitch` 跨过整个国庆假期（10-09 18:30 → 10-12 09:00，以及 09-30 18:30 → 10-08 09:00）、镜像逐个回退、年末日期查下一年、拉取失败只记录错误、磁盘缓存在断网时仍可用、缓存文件损坏被忽略。
 
-客户端测试用一个极小的 React shim 直接渲染组件树，因此可以断言到「峰段落在本地 37.5%–50% 和 58.33%–75%」这种像素级结论，也能断言 24 小时刻度、余额回退、收起态圆点、15 套配色与当前选中的主题，以及休息日「峰段数为 0 + 徽章只剩 谷 + 标签为 周末 / 节假日名 / 调休上班」。它还包含一条针对上面那层 anchor `div` 的回归断言：样式表里必须出现 `button:has(.vmx-root) > span:has(.vmx-root)` 和 `button:has(.vmx-root) > span:not(:has(.vmx-root))`，且不得再出现早先那种写法的 `button:has(> span > .vmx-root)`。
+客户端测试用一个极小的 React shim 直接渲染组件树，因此可以断言到「峰段落在本地 37.5%–50% 和 58.33%–75%」这种像素级结论，也能断言 24 小时刻度、余额回退、收起态圆点、15 套配色与当前选中的主题，以及休息日「峰段数为 0 + 徽章只剩 谷 + 标签为 周末 / 节假日名 / 调休上班」。它还包含两条回归断言：一是针对上面那层 anchor `div`，样式表里必须出现 `button:has(.vmx-root) > span:has(.vmx-root)` 和 `button:has(.vmx-root) > span:not(:has(.vmx-root))`，且不得再出现早先那种写法的 `button:has(> span > .vmx-root)`；二是针对样式归属，`document.head` 里必须**恰好一份**带 `data-plugin-css` 的标签、组件树里不得再有匿名 `<style>`、被宿主清掉后下一次渲染能自愈、卸载时该标签被移除。
 
 ## 来源与致谢
 
