@@ -119,5 +119,5 @@ TZ=Asia/Shanghai node test/client.test.mjs    # 34 项：槽位注册、组件�
 Copyright (c) 2026 istone <ad571@qq.com> — original project "dsh-valley-meter"
 (https://github.com/uckkk/dsh-valley-meter)
 
-Copyright (c) 2026 xx9work <372592461@qq.com> — this port "dsh-valley-meter-sidebar"
+Copyright (c) 2026 llluno <372592461@qq.com> — this port "dsh-valley-meter-sidebar"
 ```

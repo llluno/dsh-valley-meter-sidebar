@@ -58,7 +58,7 @@
     "billing",
     "holiday"
   ],
-  "author": "xx9work <372592461@qq.com>",
+  "author": "llluno <372592461@qq.com>",
   "contributors": [
     {
       "name": "istone",
@@ -68,11 +68,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xx9work/dsh-valley-meter-sidebar.git"
+    "url": "git+https://github.com/llluno/dsh-valley-meter-sidebar.git"
   },
-  "homepage": "https://github.com/xx9work/dsh-valley-meter-sidebar",
+  "homepage": "https://github.com/llluno/dsh-valley-meter-sidebar",
   "bugs": {
-    "url": "https://github.com/xx9work/dsh-valley-meter-sidebar/issues"
+    "url": "https://github.com/llluno/dsh-valley-meter-sidebar/issues"
   },
   "license": "MIT"
 }
