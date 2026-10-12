@@ -113,11 +113,9 @@ TZ=Asia/Shanghai node test/client.test.mjs    # 34 项：槽位注册、组件�
 
 ## 许可证
 
-[MIT](./LICENSE)。因为本插件包含原项目的代码与文案，`LICENSE` 里同时保留了上游的版权声明：
+[MIT](./LICENSE)。因为本插件包含原项目的代码与文案，`LICENSE` 里同时保留了两份版权声明（第二行是上游项目，第三行是本移植）：
 
 ```
-Copyright (c) 2026 istone <ad571@qq.com> — original project "dsh-valley-meter"
-(https://github.com/uckkk/dsh-valley-meter)
-
-Copyright (c) 2026 llluno <372592461@qq.com> — this port "dsh-valley-meter-sidebar"
+Copyright (c) 2026 istone <ad571@qq.com>       # 上游 dsh-valley-meter
+Copyright (c) 2026 llluno <372592461@qq.com>   # 本移植 dsh-valley-meter-sidebar
 ```
